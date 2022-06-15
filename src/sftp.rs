@@ -30,6 +30,12 @@ impl SftpSync {
         let mut remote_file = self.sess.scp_send(path, 10, *size, times)?;
 
         remote_file.write(buf)?;
+        // Close the channel and wait for the whole content to be tranferred
+
+        remote_file.send_eof()?;
+        remote_file.wait_eof()?;
+        remote_file.close()?;
+        remote_file.wait_close()?;
         Ok(())
     }
 }
