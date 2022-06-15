@@ -9,3 +9,6 @@ edition = "2021"
 ssh2 = "0.9.3"
 adler = "1.0.2"
 glob = "0.3.0"
+toml = "0.5.8"
+serde = { version = "1.0.125", features = ["derive"] }
+toml_edit= "0.2.1"

@@ -1,6 +1,7 @@
 use crate::connection::*;
 use crate::file_util::get_all_subdir;
 
+mod config;
 mod connection;
 mod file_util;
 mod sftp;

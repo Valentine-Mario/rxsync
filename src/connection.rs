@@ -1,5 +1,5 @@
 use ssh2::Session;
-use std::io;
+use std::io::Error;
 use std::net::TcpStream;
 
 pub struct SshCred {
@@ -19,7 +19,7 @@ impl SshCred {
         }
     }
 
-    pub fn connect(&self) -> Result<Session, io::Error> {
+    pub fn connect(&self) -> Result<Session, Error> {
         let url_host = format!("{}:{}", self.host, self.port);
         let tcp = TcpStream::connect(url_host)?;
         let mut sess = Session::new()?;

@@ -1,5 +1,5 @@
-use ssh2::{Session, Sftp, File};
-use std::io;
+use ssh2::{File, Session, Sftp};
+use std::io::Error;
 use std::path::Path;
 
 use std::io::prelude::*;
@@ -10,12 +10,12 @@ pub struct SftpSync {
 }
 
 impl SftpSync {
-    pub fn new(sess: Session) -> Result<Self, io::Error> {
+    pub fn new(sess: Session) -> Result<Self, Error> {
         let sftp = sess.sftp()?;
         Ok(SftpSync { sftp, sess })
     }
 
-    pub fn create_folder(&self, path: &Path) -> Result<(), io::Error> {
+    pub fn create_folder(&self, path: &Path) -> Result<(), Error> {
         self.sftp.mkdir(path, 10)?;
         Ok(())
     }
@@ -26,7 +26,7 @@ impl SftpSync {
         size: &u64,
         times: Option<(u64, u64)>,
         buf: &[u8],
-    ) -> Result<(), io::Error> {
+    ) -> Result<(), Error> {
         let mut remote_file = self.sess.scp_send(path, 10, *size, times)?;
 
         remote_file.write(buf)?;
@@ -39,8 +39,8 @@ impl SftpSync {
         Ok(())
     }
 
-    pub fn read_file(&self, path:&Path)-> Result<File, io::Error>{
-        let file= self.sftp.open(path)?;
+    pub fn read_file(&self, path: &Path) -> Result<File, Error> {
+        let file = self.sftp.open(path)?;
         Ok(file)
     }
 }
