@@ -1,5 +1,4 @@
 use ssh2::{Session, Sftp};
-use std::fs;
 use std::io;
 use std::path::Path;
 
@@ -19,11 +18,6 @@ impl SftpSync {
     pub fn create_folder(&self, path: &Path) -> Result<(), io::Error> {
         self.sftp.mkdir(path, 10)?;
         Ok(())
-    }
-
-    pub fn get_file_size(path: &Path) -> Result<u64, io::Error> {
-        let metadata = fs::metadata(path)?;
-        Ok(metadata.len())
     }
 
     pub fn create_file(

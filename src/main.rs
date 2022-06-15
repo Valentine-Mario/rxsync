@@ -5,12 +5,13 @@ use crate::connection::*;
 // use std::path::Path;
 
 mod connection;
+mod file_util;
 mod sftp;
 
 fn main() {
     let conn = SshCred::new(
-        "".to_string(),
-        "".to_string(),
+        "root".to_string(),
+        "password".to_string(),
         "127.0.0.1".to_string(),
         "22".to_string(),
     );

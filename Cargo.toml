@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 ssh2 = "0.9.3"
+adler = "1.0.2"
