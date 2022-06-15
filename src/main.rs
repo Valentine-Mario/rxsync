@@ -1,14 +1,12 @@
 use crate::connection::*;
-// use ssh2::Session;
-// use std::io::prelude::*;
-// use std::net::TcpStream;
-// use std::path::Path;
+use crate::file_util::get_all_subdir;
 
 mod connection;
 mod file_util;
 mod sftp;
 
 fn main() {
+    println!("{:?}", get_all_subdir("./app").unwrap());
     let conn = SshCred::new(
         "root".to_string(),
         "password".to_string(),
