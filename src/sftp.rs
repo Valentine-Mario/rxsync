@@ -1,4 +1,4 @@
-use ssh2::{Session, Sftp};
+use ssh2::{Session, Sftp, File};
 use std::io;
 use std::path::Path;
 
@@ -37,5 +37,10 @@ impl SftpSync {
         remote_file.close()?;
         remote_file.wait_close()?;
         Ok(())
+    }
+
+    pub fn read_file(&self, path:&Path)-> Result<File, io::Error>{
+        let file= self.sftp.open(path)?;
+        Ok(file)
     }
 }

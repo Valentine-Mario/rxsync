@@ -47,8 +47,13 @@ pub fn get_all_subdir(path: &str) -> Result<Vec<PathBuf>, io::Error> {
     for entry in glob(&resolved_path).expect("Failed to read glob pattern") {
         match entry {
             Ok(path) => folder_paths.push(path),
-            Err(e) => println!("{:?}", e),
+            Err(_) => {}
         }
     }
     Ok(folder_paths)
+}
+
+pub fn read_file(path: &Path) -> Result<Vec<u8>, io::Error> {
+    let data = fs::read(path)?;
+    Ok(data)
 }
