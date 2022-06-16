@@ -1,6 +1,5 @@
 use ssh2::Session;
-use std::io::Error;
-use std::net::TcpStream;
+use std::{io::Error, net::TcpStream};
 
 pub struct SshCred {
     name: String,

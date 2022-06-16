@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::{self, prelude::*, BufRead};
-use std::{fs, io::Error, path::Path};
+use std::io::{self, prelude::*, BufRead, Error};
+use std::{fs, path::Path};
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Config {
@@ -14,11 +14,11 @@ pub enum FolderConfig {
     Remove(String),
 }
 
-const checksum_file: &str = ".xsync.toml";
-const ignore_file: &str = ".xsync";
+const CHECKSUM_FILE: &str = ".xsync.toml";
+const IGNORE_FILE: &str = ".xsync";
 
 pub fn create_checksum_file(path: &Path) -> Result<(), Error> {
-    let folder_path = format!("{}/{}", path.to_str().unwrap(), checksum_file);
+    let folder_path = format!("{}/{}", path.to_str().unwrap(), CHECKSUM_FILE);
     if !Path::new(&folder_path).exists() {
         let mut file = fs::File::create(folder_path)?;
         let config = Config {
@@ -32,7 +32,7 @@ pub fn create_checksum_file(path: &Path) -> Result<(), Error> {
 }
 
 pub fn get_ignore_file(path: &Path) -> Result<Vec<String>, Error> {
-    let folder_path = format!("{}/{}", path.to_str().unwrap(), ignore_file);
+    let folder_path = format!("{}/{}", path.to_str().unwrap(), IGNORE_FILE);
     let mut all_lines = vec![];
     if Path::new(&folder_path).exists() {
         if let Ok(lines) = read_lines(folder_path) {
@@ -54,7 +54,7 @@ where
 }
 
 pub fn read_checksum_file(path: &Path) -> Result<String, Error> {
-    let folder_path = format!("{}/{}", path.to_str().unwrap(), checksum_file);
+    let folder_path = format!("{}/{}", path.to_str().unwrap(), CHECKSUM_FILE);
     let data = fs::read_to_string(folder_path)?;
     Ok(data)
 }
@@ -74,7 +74,7 @@ pub fn update_folder_config(
     path: &Path,
     action: &FolderConfig,
 ) -> Result<(), Error> {
-    let folder_path = format!("{}/{}", path.to_str().unwrap(), checksum_file);
+    let folder_path = format!("{}/{}", path.to_str().unwrap(), CHECKSUM_FILE);
     let mut a = parse_checksum_config(data).unwrap();
 
     if (key != "folders") && (key != "files") {

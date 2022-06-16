@@ -43,4 +43,14 @@ impl SftpSync {
         let file = self.sftp.open(path)?;
         Ok(file)
     }
+
+    pub fn remove_dir(&self, path: &Path) -> Result<(), Error> {
+        self.sftp.rmdir(path)?;
+        Ok(())
+    }
+
+    pub fn remove_file(&self, path: &Path) -> Result<(), Error> {
+        self.sftp.unlink(path)?;
+        Ok(())
+    }
 }
