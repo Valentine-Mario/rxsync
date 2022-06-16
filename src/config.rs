@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{self, prelude::*, BufRead};
 use std::{fs, io::Error, path::Path};
-use toml_edit::{value, Document, Table};
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Config {
@@ -11,7 +10,7 @@ pub struct Config {
 }
 
 pub enum FolderConfig {
-    Add(String),
+    Add(String, String),
     Remove(String),
 }
 
@@ -54,9 +53,9 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn read_checksum_file(path: &Path) -> Result<String, Error> {
+pub fn read_checksum_file(path: &Path) -> Result<String, Error> {
     let folder_path = format!("{}/{}", path.to_str().unwrap(), checksum_file);
-    let data = fs::read_to_string("file_name.txt")?;
+    let data = fs::read_to_string(folder_path)?;
     Ok(data)
 }
 
@@ -75,29 +74,37 @@ pub fn update_folder_config(
     path: &Path,
     action: &FolderConfig,
 ) -> Result<(), Error> {
-    let mut doc = data.parse::<Document>().expect("invalid toml document");
-
     let folder_path = format!("{}/{}", path.to_str().unwrap(), checksum_file);
+    let mut a = parse_checksum_config(data).unwrap();
+
+    if (key != "folders") && (key != "files") {
+        println!("invalid key input");
+        return Ok(());
+    }
 
     match action {
-        FolderConfig::Add(item) => {
-            doc[key][item] = value(item.to_string());
-            doc[key].as_inline_table_mut().map(|t| t.fmt());
-            fs::write(&folder_path, doc.to_string())?;
-            Ok(())
+        FolderConfig::Add(key, value) => {
+            if key == "folders" {
+                a.folders.insert(key.to_string(), value.to_string());
+                let toml_str = toml::to_string(&a).unwrap();
+                fs::write(&folder_path, &toml_str)?;
+                Ok(())
+            } else {
+                a.files.insert(key.to_string(), value.to_string());
+                let toml_str = toml::to_string(&a).unwrap();
+                fs::write(&folder_path, &toml_str)?;
+                Ok(())
+            }
         }
         FolderConfig::Remove(item) => {
-            let mut a = parse_checksum_config(data).unwrap();
             if key == "folders" {
                 a.folders.remove(item);
                 let toml_str = toml::to_string(&a).unwrap();
-                doc[key].as_inline_table_mut().map(|t| t.fmt());
-                fs::write(&toml_str, doc.to_string())?;
+                fs::write(&folder_path, &toml_str)?;
             } else {
                 a.files.remove(item);
                 let toml_str = toml::to_string(&a).unwrap();
-                doc[key].as_inline_table_mut().map(|t| t.fmt());
-                fs::write(&toml_str, doc.to_string())?;
+                fs::write(&folder_path, &toml_str)?;
             }
 
             Ok(())

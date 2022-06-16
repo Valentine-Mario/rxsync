@@ -1,0 +1,8 @@
+[folders]
+a = "1"
+kvs = "kvs"
+https = "https"
+
+[files]
+kvs = "kvs"
+"/app/ksd/aaa" = "123456"
