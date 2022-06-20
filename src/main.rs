@@ -1,8 +1,6 @@
 use std::path::Path;
 use syncer::*;
 
-
-
 fn main() {
     config::create_checksum_file(Path::new("./app")).unwrap();
     let data = config::read_checksum_file(Path::new("./app")).unwrap();
@@ -21,19 +19,8 @@ fn main() {
         "127.0.0.1".to_string(),
         "22".to_string(),
     );
-    match sync(&conn, Path::new("./app")){
-        Ok(_)=>println!("okay"),
-        Err(e)=>println!("{:?}", e)
+    match sync(&conn, Path::new("./app/keep.txt"), Path::new("./app")) {
+        Ok(_) => println!("okay"),
+        Err(e) => println!("{:?}", e),
     }
-    // match conn.connect() {
-    //     Ok(a) => {
-    //         if !a.authenticated() {
-    //             panic!("ssh session not authenticated")
-    //         }
-    //         println!("{}", a.authenticated())
-    //     }
-    //     Err(e) => {
-    //         println!("Error: {}", e)
-    //     }
-    // }
 }

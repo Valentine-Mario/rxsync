@@ -27,8 +27,7 @@ impl SftpSync {
         times: Option<(u64, u64)>,
         buf: &[u8],
     ) -> Result<(), Error> {
-        let mut remote_file = self.sess.scp_send(path, 10, *size, times)?;
-
+        let mut remote_file = self.sess.scp_send(path, 0o644, *size, times)?;
         remote_file.write(buf)?;
         // Close the channel and wait for the whole content to be tranferred
 
