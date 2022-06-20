@@ -1,30 +1,30 @@
-use crate::config::*;
-use crate::connection::*;
 use std::path::Path;
+use syncer::*;
 
-mod config;
-mod connection;
-mod file_util;
-mod sftp;
+
 
 fn main() {
-    create_checksum_file(Path::new("./app")).unwrap();
-    let data = read_checksum_file(Path::new("./app")).unwrap();
+    config::create_checksum_file(Path::new("./app")).unwrap();
+    let data = config::read_checksum_file(Path::new("./app")).unwrap();
     //   println!("{:?}", parse_checksum_config(data).unwrap());
-    update_folder_config(
+    config::update_folder_config(
         data,
         "files",
         Path::new("./app"),
-        &FolderConfig::Add(String::from("/app/ksd/aaa"), String::from("123456")),
+        &config::FolderConfig::Add(String::from("/app/ksd/aaa"), String::from("123456")),
     )
     .unwrap();
 
-    // let conn = SshCred::new(
-    //     "root".to_string(),
-    //     "password".to_string(),
-    //     "127.0.0.1".to_string(),
-    //     "22".to_string(),
-    // );
+    let conn = connection::SshCred::new(
+        "root".to_string(),
+        "password".to_string(),
+        "127.0.0.1".to_string(),
+        "22".to_string(),
+    );
+    match sync(&conn, Path::new("./app")){
+        Ok(_)=>println!("okay"),
+        Err(e)=>println!("{:?}", e)
+    }
     // match conn.connect() {
     //     Ok(a) => {
     //         if !a.authenticated() {
