@@ -47,7 +47,7 @@ pub fn get_all_files_subdir(path: &str) -> Result<Vec<PathBuf>, Error> {
 pub fn get_all_subdir(path: &str) -> Result<Vec<PathBuf>, Error> {
     let resolved_path = format!("{}/**", path);
     let mut folder_paths = vec![];
-
+    folder_paths.push(PathBuf::from(path));
     for entry in glob(&resolved_path).expect("Failed to read glob pattern") {
         match entry {
             Ok(path) => folder_paths.push(path),

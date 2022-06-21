@@ -19,7 +19,7 @@ fn main() {
         "127.0.0.1".to_string(),
         "22".to_string(),
     );
-    match sync(&conn, Path::new("./app/keep.txt"), Path::new("./app")) {
+    match sync(&conn, Path::new("./app"), Some(Path::new("./app"))) {
         Ok(_) => println!("okay"),
         Err(e) => println!("{:?}", e),
     }

@@ -15,7 +15,7 @@ pub enum FolderConfig {
 }
 
 const CHECKSUM_FILE: &str = ".xsync.toml";
-const IGNORE_FILE: &str = ".xsync";
+const IGNORE_FILE: &str = ".xsyncignore";
 
 pub fn create_checksum_file(path: &Path) -> Result<(), Error> {
     let folder_path = format!("{}/{}", path.to_str().unwrap(), CHECKSUM_FILE);
