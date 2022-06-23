@@ -37,7 +37,15 @@ pub fn get_ignore_file(path: &Path) -> Result<Vec<String>, Error> {
     if Path::new(&folder_path).exists() {
         if let Ok(lines) = read_lines(folder_path) {
             for line in lines {
-                all_lines.push(line?)
+                let str_path = path.to_str().unwrap();
+                if str_path.starts_with("./") {
+                    let result = str_path.replace("./", "");
+                    let resolved_path = Path::new("").join(result).join(line?);
+                    all_lines.push(String::from(resolved_path.to_str().unwrap()))
+                } else {
+                    let resolved_path = Path::new("").join(path).join(line?);
+                    all_lines.push(String::from(resolved_path.to_str().unwrap()))
+                }
             }
             return Ok(all_lines);
         }
