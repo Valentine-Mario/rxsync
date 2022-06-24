@@ -15,7 +15,7 @@ fn main() {
 
     let conn = connection::SshCred::new(
         "root".to_string(),
-        "realboy22".to_string(),
+        "password".to_string(),
         "127.0.0.1".to_string(),
         "22".to_string(),
     );

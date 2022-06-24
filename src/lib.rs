@@ -4,7 +4,6 @@ use crate::file_util::*;
 use crate::sftp::*;
 use std::io::Error;
 use std::path::Path;
-use std::path::PathBuf;
 
 pub mod config;
 pub mod connection;

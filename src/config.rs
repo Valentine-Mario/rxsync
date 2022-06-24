@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{self, prelude::*, BufRead, Error};
-use std::{fs, path::Path};
+use std::{fs, path::Path, path::PathBuf};
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct Config {
@@ -118,4 +118,34 @@ pub fn update_folder_config(
             Ok(())
         }
     }
+}
+
+pub fn get_items_to_delete(
+    config_state: &HashMap<String, String>,
+    item_list: Vec<PathBuf>,
+) -> Vec<String> {
+    let mut return_vec: Vec<String> = vec![];
+    //if an item exist on the config state
+    //but no longer on the item list
+    //mark as delete
+
+    for (key, _) in config_state.into_iter() {
+        if !item_list.contains(&PathBuf::from(key)) {
+            return_vec.push(key.to_string())
+        }
+    }
+    return_vec
+}
+
+pub fn get_items_to_upload(
+    config_state: &HashMap<String, String>,
+    item_list: Vec<PathBuf>,
+) -> Vec<String> {
+    let mut return_vec: Vec<String> = vec![];
+    for item in item_list {
+        if !config_state.contains_key(item.to_str().unwrap()) {
+            return_vec.push(item.to_str().unwrap().to_string())
+        }
+    }
+    return_vec
 }

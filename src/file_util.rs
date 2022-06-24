@@ -63,14 +63,13 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, Error> {
 }
 
 pub fn remove_ignored_dir(src: &mut Vec<PathBuf>, ignore: &Vec<String>) -> Vec<PathBuf> {
-    for j in ignore {
-        let index = src.iter().position(|x| x.starts_with(Path::new(j)));
-        match index {
-            Some(i) => {
-                src.remove(i);
+    for i in 0..src.len() {
+        for j in ignore {
+            if src[i].starts_with(j) {
+                src[i] = PathBuf::from("");
             }
-            None => {}
         }
     }
+    src.retain(|x| x.to_str().unwrap() != "");
     src.to_vec()
 }
