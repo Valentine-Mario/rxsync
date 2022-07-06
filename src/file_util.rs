@@ -1,3 +1,4 @@
+use crate::config::{CHECKSUM_FILE, IGNORE_FILE};
 use adler::adler32_slice;
 use glob::glob;
 use std::fs;
@@ -34,7 +35,11 @@ pub fn get_all_files_subdir(path: &str) -> Result<Vec<PathBuf>, Error> {
         match entry {
             Ok(paths) => {
                 let check = check_if_file(Path::new(&paths))?;
-                if check {
+                //ignore folders amd config files
+                if check
+                    && !Path::new(&paths).ends_with(IGNORE_FILE)
+                    && !Path::new(&paths).ends_with(CHECKSUM_FILE)
+                {
                     file_paths.push(paths);
                 }
             }
@@ -62,14 +67,24 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, Error> {
     Ok(data)
 }
 
-pub fn remove_ignored_dir(src: &mut Vec<PathBuf>, ignore: &Vec<String>) -> Vec<PathBuf> {
-    for i in 0..src.len() {
-        for j in ignore {
-            if src[i].starts_with(j) {
-                src[i] = PathBuf::from("");
+pub fn remove_ignored_dir(
+    src_path: &Path,
+    src: &mut Vec<PathBuf>,
+    ignore: &Vec<String>,
+) -> Vec<PathBuf> {
+    let folder_path = format!("{}/{}", src_path.to_str().unwrap(), IGNORE_FILE);
+    if Path::new(&folder_path).exists() {
+        for i in 0..src.len() {
+            for j in ignore {
+                if src[i].starts_with(j) {
+                    src[i] = PathBuf::from("");
+                }
             }
         }
+    } else {
+        return src.to_vec();
     }
+
     src.retain(|x| x.to_str().unwrap() != "");
     src.to_vec()
 }

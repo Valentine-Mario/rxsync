@@ -25,8 +25,14 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
                 let absolue_path = Path::new("").join(dest_path).join(filename);
                 sftp_conn.create_file(&absolue_path, &size, None, &file_content[..])?;
             } else {
-                let dir = get_all_subdir(&src.to_str().unwrap())?;
-                println!("{:?}", dir);
+                //get all sub dir and removed ignored dir
+                let mut dir = get_all_subdir(&src.to_str().unwrap())?;
+                let ignore_files = get_ignore_file(src)?;
+                remove_ignored_dir(src, &mut dir, &ignore_files);
+
+
+                let mut file_list = (get_all_files_subdir(&src.to_str().unwrap())).unwrap();
+                remove_ignored_dir(src, &mut file_list, &ignore_files);
                 for i in dir {
                     sftp_conn.create_folder(&i)?;
                 }
