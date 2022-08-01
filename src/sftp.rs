@@ -15,9 +15,13 @@ impl SftpSync {
         Ok(SftpSync { sftp, sess })
     }
 
-    pub fn create_folder(&self, path: &Path) -> Result<(), Error> {
-        self.sftp.mkdir(path, 10)?;
-        Ok(())
+    pub fn create_folder(&self, path: &Path) {
+        match self.sftp.mkdir(path, 10) {
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!("error creatign folder {:?} \n {:?}", path, err)
+            }
+        }
     }
 
     pub fn create_file(

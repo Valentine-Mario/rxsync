@@ -16,25 +16,27 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
 
     match dest {
         Some(dest_path) => {
+            sftp_conn.create_folder(dest_path);
+
             if check_if_file(src)? {
                 //get file size
                 let size = get_file_size(src)?;
                 let file_content = read_file(src)?;
                 let filename = Path::new(src.file_name().unwrap());
-                sftp_conn.create_folder(dest_path)?;
                 let absolue_path = Path::new("").join(dest_path).join(filename);
                 sftp_conn.create_file(&absolue_path, &size, None, &file_content[..])?;
             } else {
                 //get all sub dir and removed ignored dir
                 let mut dir = get_all_subdir(&src.to_str().unwrap())?;
                 let ignore_files = get_ignore_file(src)?;
-                remove_ignored_dir(src, &mut dir, &ignore_files);
+                remove_ignored_path(src, &mut dir, &ignore_files);
 
-
-                let mut file_list = (get_all_files_subdir(&src.to_str().unwrap())).unwrap();
-                remove_ignored_dir(src, &mut file_list, &ignore_files);
+                let mut file_list = (get_all_files_subdir(&src.to_str().unwrap()))?;
+                remove_ignored_path(src, &mut file_list, &ignore_files);
                 for i in dir {
-                    sftp_conn.create_folder(&i)?;
+                    //resolve path and add to dir
+                    let absolue_path = Path::new("").join(dest_path).join(&i);
+                    sftp_conn.create_folder(&absolue_path);
                 }
             }
         }

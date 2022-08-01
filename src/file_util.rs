@@ -67,7 +67,7 @@ pub fn read_file(path: &Path) -> Result<Vec<u8>, Error> {
     Ok(data)
 }
 
-pub fn remove_ignored_dir(
+pub fn remove_ignored_path(
     src_path: &Path,
     src: &mut Vec<PathBuf>,
     ignore: &Vec<String>,
