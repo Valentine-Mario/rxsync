@@ -58,6 +58,24 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
                 let filename = Path::new(src.file_name().unwrap());
                 sftp_conn.create_file(&filename, &size, None, &file_content[..])?;
             } else {
+                //get all sub dir and removed ignored dir
+                let mut dir = get_all_subdir(&src.to_str().unwrap())?;
+                let ignore_files = get_ignore_file(src)?;
+                remove_ignored_path(src, &mut dir, &ignore_files);
+
+                let mut file_list = (get_all_files_subdir(&src.to_str().unwrap()))?;
+                remove_ignored_path(src, &mut file_list, &ignore_files);
+                //folders need to be created sequentially
+                //don't run with concurrency
+                for i in dir {
+                    sftp_conn.create_folder(&i);
+                }
+                //TODO: create files concurrently on muntiple threads
+                for i in file_list {
+                    let size = get_file_size(&i)?;
+                    let file_content = read_file(&i)?;
+                    sftp_conn.create_file(&i, &size, None, &file_content[..])?;
+                }
             }
         }
     }
