@@ -67,7 +67,7 @@ pub fn read_checksum_file(path: &Path) -> Result<String, Error> {
     Ok(data)
 }
 
-pub fn parse_checksum_config(data: String) -> Result<Config, String> {
+pub fn parse_checksum_config(data: &String) -> Result<Config, String> {
     let raw_cfg: Result<Config, toml::de::Error> = toml::from_str(&data);
     let raw_cfg = match raw_cfg {
         Ok(raw_cfg) => raw_cfg,
@@ -77,7 +77,7 @@ pub fn parse_checksum_config(data: String) -> Result<Config, String> {
 }
 
 pub fn update_folder_config(
-    data: String,
+    data: &String,
     key: &str,
     path: &Path,
     action: &FolderConfig,

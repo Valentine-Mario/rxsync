@@ -6,7 +6,7 @@ fn main() {
     let data = config::read_checksum_file(Path::new("./app")).unwrap();
     //   println!("{:?}", parse_checksum_config(data).unwrap());
     config::update_folder_config(
-        data,
+        &data,
         "files",
         Path::new("./app"),
         &config::FolderConfig::Add(String::from("/app/ksd/aaa"), String::from("123456")),

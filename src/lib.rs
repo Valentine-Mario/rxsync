@@ -16,7 +16,7 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
     create_checksum_file(src)?;
     //get toml config file
     let config_str = read_checksum_file(src)?;
-    match parse_checksum_config(config_str) {
+    match parse_checksum_config(&config_str) {
         Ok(parsed_config) => {
             match dest {
                 Some(dest_path) => {
@@ -24,36 +24,67 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
 
                     if check_if_file(src)? {
                         //check if file has been uploaded
-                        match parsed_config
+                        if parsed_config
                             .files
-                            .get(format!("{}", src.to_str().unwrap()))
+                            .contains_key(&format!("{}", src.to_str().unwrap()))
                         {
-                            Some(file_found) => {}
-                            None => {
-                                //get file size
-                                let size = get_file_size(src)?;
-                                let file_content = read_file(src)?;
-                                //get file checksum
-                                let checksum_data = create_checksum(&file_content[..]);
-                                let filename = Path::new(src.file_name().unwrap());
-                                let absolue_path = Path::new("").join(dest_path).join(filename);
-                                sftp_conn.create_file(
-                                    &absolue_path,
-                                    &size,
-                                    None,
-                                    &file_content[..],
-                                )?;
-                                //update config file after successful upload
-                                config::update_folder_config(
-                                    config_str,
-                                    "files",
-                                    &src,
-                                    &FolderConfig::Add(
-                                        String::from(src.to_str().unwrap()),
-                                        format!("{}", checksum_data),
-                                    ),
-                                )?;
+                            //get file checksum
+                            let file_content = read_file(src)?;
+                            let checksum_data = create_checksum(&file_content[..]);
+                            //check if found checksum equals config checksum
+                            match parsed_config
+                                .files
+                                .get(&format!("{}", src.to_str().unwrap()))
+                            {
+                                Some(config_checksum) => {
+                                    if &format!("{}", checksum_data) == config_checksum {
+                                        eprintln!("no update made to file. Nothing new to update")
+                                    } else {
+                                        let size = get_file_size(src)?;
+                                        let filename = Path::new(src.file_name().unwrap());
+                                        let absolue_path =
+                                            Path::new("").join(dest_path).join(filename);
+                                        sftp_conn.create_file(
+                                            &absolue_path,
+                                            &size,
+                                            None,
+                                            &file_content[..],
+                                        )?;
+                                        //update config file after successful upload
+                                        config::update_folder_config(
+                                            &config_str,
+                                            "files",
+                                            &src,
+                                            &FolderConfig::Add(
+                                                String::from(src.to_str().unwrap()),
+                                                format!("{}", checksum_data),
+                                            ),
+                                        )?;
+                                    }
+                                }
+                                None => {
+                                    //do nothing
+                                }
                             }
+                        } else {
+                            //get file size
+                            let size = get_file_size(src)?;
+                            let file_content = read_file(src)?;
+                            //get file checksum
+                            let checksum_data = create_checksum(&file_content[..]);
+                            let filename = Path::new(src.file_name().unwrap());
+                            let absolue_path = Path::new("").join(dest_path).join(filename);
+                            sftp_conn.create_file(&absolue_path, &size, None, &file_content[..])?;
+                            //update config file after successful upload
+                            config::update_folder_config(
+                                &config_str,
+                                "files",
+                                &src,
+                                &FolderConfig::Add(
+                                    String::from(src.to_str().unwrap()),
+                                    format!("{}", checksum_data),
+                                ),
+                            )?;
                         }
                     } else {
                         //get all sub dir and removed ignored dir
