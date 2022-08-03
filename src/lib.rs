@@ -18,8 +18,10 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
     let config_str = read_checksum_file(src)?;
     match parse_checksum_config(&config_str) {
         Ok(parsed_config) => {
+            //check if dest path is set
             match dest {
                 Some(dest_path) => {
+                    //create destination path
                     sftp_conn.create_folder(dest_path);
 
                     if check_if_file(src)? {
@@ -31,12 +33,13 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
                             //get file checksum
                             let file_content = read_file(src)?;
                             let checksum_data = create_checksum(&file_content[..]);
-                            //check if found checksum equals config checksum
+                            
                             match parsed_config
                                 .files
                                 .get(&format!("{}", src.to_str().unwrap()))
                             {
                                 Some(config_checksum) => {
+                                    //check if found checksum equals config checksum
                                     if &format!("{}", checksum_data) == config_checksum {
                                         eprintln!("no update made to file. Nothing new to update")
                                     } else {
@@ -94,6 +97,16 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
 
                         let mut file_list = (get_all_files_subdir(&src.to_str().unwrap()))?;
                         remove_ignored_path(src, &mut file_list, &ignore_files);
+
+                        //get files to be deleted and upload
+                        let delete_files=get_items_to_delete(&parsed_config.files, &file_list);
+                        let upload_files=get_items_to_upload(&parsed_config.files, &file_list);
+
+                        //get folders to delete and upload
+                        let delete_folder=get_items_to_delete(&parsed_config.files, &dir);
+                        let upload_folder=get_items_to_upload(&parsed_config.files, &dir);
+
+
                         //folders need to be created sequentially
                         //don't run with concurrency
                         for i in dir {

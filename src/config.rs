@@ -122,7 +122,7 @@ pub fn update_folder_config(
 
 pub fn get_items_to_delete(
     config_state: &HashMap<String, String>,
-    item_list: Vec<PathBuf>,
+    item_list: &Vec<PathBuf>,
 ) -> Vec<String> {
     let mut return_vec: Vec<String> = vec![];
     //if an item exist on the config state
@@ -139,8 +139,10 @@ pub fn get_items_to_delete(
 
 pub fn get_items_to_upload(
     config_state: &HashMap<String, String>,
-    item_list: Vec<PathBuf>,
+    item_list: &Vec<PathBuf>,
 ) -> Vec<String> {
+    //if an item exist in memory but not config state
+    //mark to upload
     let mut return_vec: Vec<String> = vec![];
     for item in item_list {
         if !config_state.contains_key(item.to_str().unwrap()) {
