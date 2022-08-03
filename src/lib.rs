@@ -25,69 +25,65 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
                     sftp_conn.create_folder(dest_path);
 
                     if check_if_file(src)? {
-                        //check if file has been uploaded
-                        if parsed_config
+                        //get file checksum
+                        let file_content = read_file(src)?;
+                        let checksum_data = create_checksum(&file_content[..]);
+
+                        match parsed_config
                             .files
-                            .contains_key(&format!("{}", src.to_str().unwrap()))
+                            .get(&format!("{}", src.to_str().unwrap()))
                         {
-                            //get file checksum
-                            let file_content = read_file(src)?;
-                            let checksum_data = create_checksum(&file_content[..]);
-                            
-                            match parsed_config
-                                .files
-                                .get(&format!("{}", src.to_str().unwrap()))
-                            {
-                                Some(config_checksum) => {
-                                    //check if found checksum equals config checksum
-                                    if &format!("{}", checksum_data) == config_checksum {
-                                        eprintln!("no update made to file. Nothing new to update")
-                                    } else {
-                                        let size = get_file_size(src)?;
-                                        let filename = Path::new(src.file_name().unwrap());
-                                        let absolue_path =
-                                            Path::new("").join(dest_path).join(filename);
-                                        sftp_conn.create_file(
-                                            &absolue_path,
-                                            &size,
-                                            None,
-                                            &file_content[..],
-                                        )?;
-                                        //update config file after successful upload
-                                        config::update_folder_config(
-                                            &config_str,
-                                            "files",
-                                            &src,
-                                            &FolderConfig::Add(
-                                                String::from(src.to_str().unwrap()),
-                                                format!("{}", checksum_data),
-                                            ),
-                                        )?;
-                                    }
-                                }
-                                None => {
-                                    //do nothing
+                            Some(config_checksum) => {
+                                //check if found checksum equals config checksum
+                                if &format!("{}", checksum_data) == config_checksum {
+                                    eprintln!("no update made to file. Nothing new to update")
+                                } else {
+                                    let size = get_file_size(src)?;
+                                    let filename = Path::new(src.file_name().unwrap());
+                                    let absolue_path = Path::new("").join(dest_path).join(filename);
+                                    sftp_conn.create_file(
+                                        &absolue_path,
+                                        &size,
+                                        None,
+                                        &file_content[..],
+                                    )?;
+                                    //update config file after successful upload
+                                    config::update_folder_config(
+                                        &config_str,
+                                        "files",
+                                        &src,
+                                        &FolderConfig::Add(
+                                            String::from(src.to_str().unwrap()),
+                                            format!("{}", checksum_data),
+                                        ),
+                                    )?;
                                 }
                             }
-                        } else {
-                            //get file size
-                            let size = get_file_size(src)?;
-                            let file_content = read_file(src)?;
-                            //get file checksum
-                            let checksum_data = create_checksum(&file_content[..]);
-                            let filename = Path::new(src.file_name().unwrap());
-                            let absolue_path = Path::new("").join(dest_path).join(filename);
-                            sftp_conn.create_file(&absolue_path, &size, None, &file_content[..])?;
-                            //update config file after successful upload
-                            config::update_folder_config(
-                                &config_str,
-                                "files",
-                                &src,
-                                &FolderConfig::Add(
-                                    String::from(src.to_str().unwrap()),
-                                    format!("{}", checksum_data),
-                                ),
-                            )?;
+                            None => {
+                                //get file size
+                                let size = get_file_size(src)?;
+                                let file_content = read_file(src)?;
+                                //get file checksum
+                                let checksum_data = create_checksum(&file_content[..]);
+                                let filename = Path::new(src.file_name().unwrap());
+                                let absolue_path = Path::new("").join(dest_path).join(filename);
+                                sftp_conn.create_file(
+                                    &absolue_path,
+                                    &size,
+                                    None,
+                                    &file_content[..],
+                                )?;
+                                //update config file after successful upload
+                                config::update_folder_config(
+                                    &config_str,
+                                    "files",
+                                    &src,
+                                    &FolderConfig::Add(
+                                        String::from(src.to_str().unwrap()),
+                                        format!("{}", checksum_data),
+                                    ),
+                                )?;
+                            }
                         }
                     } else {
                         //get all sub dir and removed ignored dir
@@ -99,13 +95,12 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
                         remove_ignored_path(src, &mut file_list, &ignore_files);
 
                         //get files to be deleted and upload
-                        let delete_files=get_items_to_delete(&parsed_config.files, &file_list);
-                        let upload_files=get_items_to_upload(&parsed_config.files, &file_list);
+                        let delete_files = get_items_to_delete(&parsed_config.files, &file_list);
+                        let upload_files = get_items_to_upload(&parsed_config.files, &file_list);
 
                         //get folders to delete and upload
-                        let delete_folder=get_items_to_delete(&parsed_config.files, &dir);
-                        let upload_folder=get_items_to_upload(&parsed_config.files, &dir);
-
+                        let delete_folder = get_items_to_delete(&parsed_config.files, &dir);
+                        let upload_folder = get_items_to_upload(&parsed_config.files, &dir);
 
                         //folders need to be created sequentially
                         //don't run with concurrency
@@ -120,7 +115,32 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
                             let file_content = read_file(&i)?;
                             let filename = Path::new(i.file_name().unwrap());
                             let absolue_path = Path::new("").join(dest_path).join(filename);
-                            sftp_conn.create_file(&absolue_path, &size, None, &file_content[..])?;
+                            let checksum_data = create_checksum(&file_content[..]);
+                            match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {
+                                Some(config_checksum) => {
+                                    if &format!("{}", checksum_data) != config_checksum {
+                                        sftp_conn.create_file(
+                                            &absolue_path,
+                                            &size,
+                                            None,
+                                            &file_content[..],
+                                        )?;
+                                        config::update_folder_config(
+                                            &config_str,
+                                            "files",
+                                            &src,
+                                            &FolderConfig::Add(
+                                                String::from(i.to_str().unwrap()),
+                                                format!("{}", checksum_data),
+                                            ),
+                                        )?;
+                                    }
+                                }
+                                None => {
+                                    //do nothing
+                                    //already taken care of by the get_item_to_upload function above
+                                }
+                            }
                         }
                     }
                 }
