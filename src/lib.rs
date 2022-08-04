@@ -104,10 +104,28 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
 
                         //folders need to be created sequentially
                         //don't run with concurrency
-                        for i in dir {
+                        for i in upload_folder {
                             //resolve path and add to dir
                             let absolue_path = Path::new("").join(dest_path).join(&i);
                             sftp_conn.create_folder(&absolue_path);
+                            config::update_folder_config(
+                                &config_str,
+                                "folders",
+                                &src,
+                                &FolderConfig::Add(i, "".to_string()),
+                            )?
+                        }
+
+                        //delete marked folder
+                        for i in delete_folder {
+                            let absolue_path = Path::new("").join(dest_path).join(&i);
+                            sftp_conn.remove_dir(&absolue_path)?;
+                            config::update_folder_config(
+                                &config_str,
+                                "folders",
+                                &src,
+                                &&FolderConfig::Remove(i),
+                            )?;
                         }
                         //TODO: create files concurrently on muntiple threads
                         for i in file_list {
