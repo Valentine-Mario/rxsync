@@ -127,6 +127,32 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
                                 &&FolderConfig::Remove(i),
                             )?;
                         }
+                        //delete marked files
+                        for i in delete_files {
+                            let absolue_path = Path::new("").join(dest_path).join(&i);
+                            sftp_conn.remove_file(&absolue_path)?;
+                            config::update_folder_config(
+                                &config_str,
+                                "files",
+                                &src,
+                                &&FolderConfig::Remove(i),
+                            )?;
+                        }
+
+                        //new files to upload
+                        for i in upload_files.iter() {
+                            let size = get_file_size(&Path::new(&i))?;
+                            let file_content = read_file(&Path::new(&i))?;
+                            let absolue_path = Path::new("").join(dest_path).join(i);
+                            let checksum_data = create_checksum(&file_content[..]);
+                            sftp_conn.create_file(&absolue_path, &size, None, &file_content[..])?;
+                            config::update_folder_config(
+                                &config_str,
+                                "files",
+                                &src,
+                                &FolderConfig::Add(String::from(i), format!("{}", checksum_data)),
+                            )?;
+                        }
                         //TODO: create files concurrently on muntiple threads
                         for i in file_list {
                             let size = get_file_size(&i)?;
