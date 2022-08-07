@@ -77,35 +77,33 @@ pub fn parse_checksum_config(data: &String) -> Result<Config, String> {
 }
 
 pub fn update_folder_config(
-    data: &String,
-    key: &str,
+    key_config: &str,
     path: &Path,
     action: &FolderConfig,
 ) -> Result<(), Error> {
     let folder_path = format!("{}/{}", path.to_str().unwrap(), CHECKSUM_FILE);
-    let mut a = parse_checksum_config(data).unwrap();
+    let cfg_data = read_checksum_file(path)?;
+    let mut a = parse_checksum_config(&cfg_data).unwrap();
 
-    if (key != "folders") && (key != "files") {
+    if (key_config != "folders") && (key_config != "files") {
         println!("invalid key input");
         return Ok(());
     }
-
     match action {
         FolderConfig::Add(key, value) => {
-            if key == "folders" {
+            if key_config == "folders" {
                 a.folders.insert(key.to_string(), value.to_string());
                 let toml_str = toml::to_string(&a).unwrap();
                 fs::write(&folder_path, &toml_str)?;
-                Ok(())
             } else {
                 a.files.insert(key.to_string(), value.to_string());
                 let toml_str = toml::to_string(&a).unwrap();
                 fs::write(&folder_path, &toml_str)?;
-                Ok(())
             }
+            Ok(())
         }
         FolderConfig::Remove(item) => {
-            if key == "folders" {
+            if key_config == "folders" {
                 a.folders.remove(item);
                 let toml_str = toml::to_string(&a).unwrap();
                 fs::write(&folder_path, &toml_str)?;

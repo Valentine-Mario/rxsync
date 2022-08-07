@@ -19,7 +19,7 @@ impl SftpSync {
         match self.sftp.mkdir(path, 10) {
             Ok(_) => {}
             Err(err) => {
-                eprintln!("error creatign folder {:?} \n {:?}", path, err)
+                eprintln!("error creating folder {:?} \n {:?}", path, err)
             }
         }
     }
