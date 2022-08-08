@@ -1,0 +1,8 @@
+[folders]
+"app2/amazon" = ""
+"app2/amazon/bbb" = ""
+"app2/" = ""
+
+[files]
+"app2/amazon/bbb/klm" = "1"
+"app2/keep.txt" = "672662753"

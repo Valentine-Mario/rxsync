@@ -40,20 +40,32 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
         Ok(parsed_config) => {
             //get all sub dir and removed ignored dir
             let ignore_files = get_ignore_file(src)?;
+
             let mut dir = get_all_subdir(&src.to_str().unwrap())?;
 
+            let mut dyn_path = String::from("");
+            let mut dyn_vec=vec![];
+
+            let path_component = src.components();
+            for i in path_component {
+                dyn_path += &format!("{}/", i.as_os_str().to_str().unwrap()).to_string();
+                    dyn_vec.push(Path::new(&dyn_path).to_path_buf());
+            }
+
             remove_ignored_path(src, &mut dir, &ignore_files);
+            dyn_vec.append(&mut dir);
 
             //get folders to delete and upload
-            let delete_folder = get_items_to_delete(&parsed_config.folders, &dir);
-            let upload_folder = get_items_to_upload(&parsed_config.folders, &dir);
+            let delete_folder = get_items_to_delete(&parsed_config.folders, &dyn_vec);
+            let upload_folder = get_items_to_upload(&parsed_config.folders, &dyn_vec);
 
             let mut file_list = (get_all_files_subdir(&src.to_str().unwrap()))?;
             remove_ignored_path(src, &mut file_list, &ignore_files);
-
             //get files to be deleted and upload
             let delete_files = get_items_to_delete(&parsed_config.files, &file_list);
             let upload_files = get_items_to_upload(&parsed_config.files, &file_list);
+
+            
 
             //check if dest path is set
             match dest {
@@ -149,7 +161,8 @@ fn create_and_add_folder(
     Ok(())
 }
 
-fn compute_and_remove_folder(
+//TODO: delete folder recursively fails
+fn _compute_and_remove_folder(
     src: &Path,
     dest_path: &Path,
     sftp_conn: &SftpSync,
@@ -171,7 +184,7 @@ fn upload_and_sync(
     src: &Path,
     sftp_conn: &SftpSync,
     upload_folder: Vec<String>,
-    delete_folder: Vec<String>,
+    _delete_folder: Vec<String>,
     upload_files: Vec<String>,
     delete_files: Vec<String>,
     file_list: Vec<PathBuf>,
@@ -228,10 +241,12 @@ fn upload_and_sync(
             create_and_add_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
         }
 
+
         // delete marked folder
-        for i in delete_folder {
-            compute_and_remove_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
-        }
+        // for i in delete_folder {
+        //     compute_and_remove_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
+        // }
+
         //delete marked files
         for i in delete_files {
             compute_and_remove_file(Path::new(&i), dest_path, &sftp_conn, &src)?;
@@ -252,7 +267,7 @@ fn upload_and_sync(
             )?;
         }
         //TODO: create files concurrently on muntiple threads
-        for i in file_list {
+        for i in &file_list {
             let file_content = read_file(&i)?;
             let checksum_data = create_checksum(&file_content[..]);
             match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {

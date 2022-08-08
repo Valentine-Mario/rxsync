@@ -20,11 +20,11 @@ fn main() {
         "127.0.0.1".to_string(),
         "22".to_string(),
     );
-    let conn = conn.connect().unwrap();
-    let sftp_conn = SftpSync::new(conn).unwrap();
-    sftp_conn
-        .download_item(Path::new("app"), Path::new("hey"))
-        .unwrap();
+    // let conn = conn.connect().unwrap();
+    // let sftp_conn = SftpSync::new(conn).unwrap();
+    // sftp_conn
+    //     .download_item(Path::new("app"), Path::new("hey"))
+    //     .unwrap();
     // let link = sftp_conn.sftp.readdir(Path::new(".config")).unwrap();
     // println!("{:?}", link);
     // println!("{:?}", link[0].1.is_dir());
@@ -39,8 +39,15 @@ fn main() {
     // remote_file.wait_eof().unwrap();
     // remote_file.close().unwrap();
     // remote_file.wait_close().unwrap();
-    // match sync(&conn, Path::new("./app"), None) {
-    //     Ok(_) => println!("okay"),
-    //     Err(e) => println!("{:?}", e),
+    // println!("{:?}", Path::new("app2/amazon").components());
+    // let a= Path::new("app2/amazon").components();
+    // let mut path=String::from("");
+    // for i in a{
+    //     path+=&format!("{}/", i.as_os_str().to_str().unwrap()).to_string();
+    //     println!("{:?}", path)
     // }
+    match sync(&conn, Path::new("app2/"), None) {
+        Ok(_) => println!("okay"),
+        Err(e) => println!("{:?}", e),
+    }
 }

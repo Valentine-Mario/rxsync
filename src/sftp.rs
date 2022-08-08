@@ -1,4 +1,4 @@
-use ssh2::{File, Session, Sftp};
+use ssh2::{ErrorCode, File, Session, Sftp};
 use std::fs;
 use std::io::Error;
 use std::path::Path;
@@ -23,7 +23,18 @@ impl SftpSync {
         match self.sftp.mkdir(path, 10) {
             Ok(_) => {}
             Err(err) => {
-                eprintln!("error creating folder {:?} \n {:?}", path, err)
+                match err.code() {
+                    ErrorCode::SFTP(num) => {
+                        if num == 4 {
+                            //do nothing just trying to create an exisiting folder
+                        } else {
+                            eprintln!("error creating folder {:?} \n {:?}", path, err)
+                        }
+                    }
+                    ErrorCode::Session(_) => {
+                        eprintln!("error creating folder {:?} \n {:?}", path, err)
+                    }
+                }
             }
         }
     }

@@ -127,7 +127,6 @@ pub fn get_items_to_delete(
     //if an item exist on the config state
     //but no longer on the item list
     //mark as delete
-
     for (key, _) in config_state.into_iter() {
         if !item_list.contains(&PathBuf::from(key)) {
             return_vec.push(key.to_string())
