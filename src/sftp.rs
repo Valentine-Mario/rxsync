@@ -1,9 +1,12 @@
-use ssh2::{File, FileStat, Session, Sftp};
+use ssh2::{File, Session, Sftp};
 use std::fs;
 use std::io::Error;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use std::io::prelude::*;
+
+use crate::config::*;
+use crate::file_util::create_checksum;
 
 pub struct SftpSync {
     pub sftp: Sftp,
@@ -59,18 +62,29 @@ impl SftpSync {
     }
 
     pub fn download_item(&self, src: &Path, dest: &Path) -> Result<(), Error> {
-        match fs::create_dir_all(Path::new("").join(dest).join(src)){
-            Ok(_)=>{
-                let file_list= self.sftp.readdir(src)?;
-                for i in file_list{
-                    if i.1.is_dir(){
+        let path = Path::new("").join(dest).join(src);
+        match fs::create_dir_all(&path) {
+            Ok(_) => {
+                create_checksum_file(&dest)?;
+                update_folder_config(
+                    "folders",
+                    &dest,
+                    &FolderConfig::Add(src.to_str().unwrap().to_string(), "".to_string()),
+                )?;
+                let file_list = self.sftp.readdir(src)?;
+                for i in file_list {
+                    if i.1.is_dir() {
                         self.download_item(Path::new(&i.0), dest)?
-                    }else{
-                        self.download_file(Path::new(&i.0), &Path::new("").join(dest).join(&i.0))?
+                    } else {
+                        self.download_file(
+                            Path::new(&i.0),
+                            &Path::new("").join(dest).join(&i.0),
+                            Some(dest),
+                        )?
                     }
                 }
             }
-            Err(err)=>{
+            Err(err) => {
                 println!("{:?}", err);
             }
         }
@@ -78,13 +92,40 @@ impl SftpSync {
         Ok(())
     }
 
-
-    pub fn download_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
+    pub fn download_file(
+        &self,
+        src: &Path,
+        dest: &Path,
+        config_dest: Option<&Path>,
+    ) -> Result<(), Error> {
         let (mut remote_file, stat) = self.sess.scp_recv(src)?;
-        println!("...download file of size {} to path {:?}", stat.size(), dest);
+        println!(
+            "...download file of size {} to path {:?}",
+            stat.size(),
+            dest
+        );
         let mut contents = Vec::new();
         remote_file.read_to_end(&mut contents)?;
-        fs::write(dest, contents)?;
+        fs::write(dest, &contents)?;
+        let checksum_data = create_checksum(&contents[..]);
+        match config_dest {
+            Some(dest) => {
+                update_folder_config(
+                    "files",
+                    &dest,
+                    &FolderConfig::Add(
+                        String::from(src.to_str().unwrap()),
+                        format!("{}", checksum_data),
+                    ),
+                )?;
+            }
+            None => {}
+        }
+
+        remote_file.send_eof().unwrap();
+        remote_file.wait_eof().unwrap();
+        remote_file.close().unwrap();
+        remote_file.wait_close().unwrap();
         Ok(())
     }
 }

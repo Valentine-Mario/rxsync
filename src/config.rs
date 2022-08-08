@@ -9,6 +9,7 @@ pub struct Config {
     pub files: HashMap<String, String>,
 }
 
+#[derive(Debug)]
 pub enum FolderConfig {
     Add(String, String),
     Remove(String),
