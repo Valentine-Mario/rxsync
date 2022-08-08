@@ -39,134 +39,30 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
             //check if dest path is set
             match dest {
                 Some(dest_path) => {
-                    //create destination path
-                    if !parsed_config
-                        .folders
-                        .contains_key(&String::from(dest_path.to_str().unwrap()))
-                    {
-                        sftp_conn.create_folder(dest_path);
-                    }
-
-                    if check_if_file(src)? {
-                        //get file checksum
-                        let file_content = read_file(src)?;
-                        let checksum_data = create_checksum(&file_content[..]);
-
-                        //check if tpml config has file
-                        match parsed_config
-                            .files
-                            .get(&format!("{}", src.to_str().unwrap()))
-                        {
-                            Some(config_checksum) => {
-                                //check if found checksum equals config checksum
-                                if &format!("{}", checksum_data) == config_checksum {
-                                    eprintln!("no update made to file. Nothing new to update")
-                                } else {
-                                    compute_and_add_file(
-                                        &src,
-                                        &dest_path,
-                                        &file_content,
-                                        checksum_data,
-                                        &sftp_conn,
-                                        &src,
-                                    )?;
-                                }
-                            }
-                            None => {
-                                compute_and_add_file(
-                                    &src,
-                                    &dest_path,
-                                    &file_content,
-                                    checksum_data,
-                                    &sftp_conn,
-                                    &src,
-                                )?;
-                            }
-                        }
-                    } else {
-                        //folders need to be created sequentially
-                        //don't run with concurrency
-                        for i in upload_folder {
-                            create_and_add_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
-                        }
-
-                        // delete marked folder
-                        for i in delete_folder {
-                            compute_and_remove_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
-                        }
-                        //delete marked files
-                        for i in delete_files {
-                            compute_and_remove_file(Path::new(&i), dest_path, &sftp_conn, &src)?;
-                        }
-
-                        //new files to upload
-                        for i in upload_files.iter() {
-                            let file_content = read_file(&Path::new(&i))?;
-                            let checksum_data = create_checksum(&file_content[..]);
-
-                            compute_and_add_file(
-                                &Path::new(i),
-                                &dest_path,
-                                &file_content,
-                                checksum_data,
-                                &sftp_conn,
-                                &src,
-                            )?;
-                        }
-                        //TODO: create files concurrently on muntiple threads
-                        for i in file_list {
-                            println!("content {:?}", i);
-
-                            let file_content = read_file(&i)?;
-                            let checksum_data = create_checksum(&file_content[..]);
-                            match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {
-                                Some(config_checksum) => {
-                                    if &format!("{}", checksum_data) != config_checksum {
-                                        compute_and_add_file(
-                                            &i,
-                                            &dest_path,
-                                            &file_content,
-                                            checksum_data,
-                                            &sftp_conn,
-                                            &src,
-                                        )?;
-                                    }
-                                }
-                                None => {
-                                    //do nothing
-                                    //already taken care of by the get_item_to_upload function above
-                                }
-                            }
-                        }
-                    }
+                    upload_and_sync(
+                        &parsed_config,
+                        &dest_path,
+                        &src,
+                        &sftp_conn,
+                        upload_folder,
+                        delete_folder,
+                        upload_files,
+                        delete_files,
+                        file_list,
+                    )?;
                 }
                 None => {
-                    if check_if_file(src)? {
-                        //get file size
-                        let size = get_file_size(src)?;
-                        let file_content = read_file(src)?;
-                        let filename = Path::new(src.file_name().unwrap());
-                        sftp_conn.create_file(&filename, &size, None, &file_content[..])?;
-                    } else {
-                        //get all sub dir and removed ignored dir
-                        let mut dir = get_all_subdir(&src.to_str().unwrap())?;
-                        let ignore_files = get_ignore_file(src)?;
-                        remove_ignored_path(src, &mut dir, &ignore_files);
-
-                        let mut file_list = (get_all_files_subdir(&src.to_str().unwrap()))?;
-                        remove_ignored_path(src, &mut file_list, &ignore_files);
-                        //folders need to be created sequentially
-                        //don't run with concurrency
-                        for i in dir {
-                            sftp_conn.create_folder(&i);
-                        }
-                        //TODO: create files concurrently on muntiple threads
-                        for i in file_list {
-                            let size = get_file_size(&i)?;
-                            let file_content = read_file(&i)?;
-                            sftp_conn.create_file(&i, &size, None, &file_content[..])?;
-                        }
-                    }
+                    upload_and_sync(
+                        &parsed_config,
+                        Path::new(""),
+                        &src,
+                        &sftp_conn,
+                        upload_folder,
+                        delete_folder,
+                        upload_files,
+                        delete_files,
+                        file_list,
+                    )?;
                 }
             }
         }
@@ -247,5 +143,118 @@ fn compute_and_remove_folder(
         &original_src,
         &&FolderConfig::Remove(src.to_str().unwrap().to_string()),
     )?;
+    Ok(())
+}
+
+fn upload_and_sync(
+    parsed_config: &Config,
+    dest_path: &Path,
+    src: &Path,
+    sftp_conn: &SftpSync,
+    upload_folder: Vec<String>,
+    delete_folder: Vec<String>,
+    upload_files: Vec<String>,
+    delete_files: Vec<String>,
+    file_list: Vec<PathBuf>,
+) -> Result<(), Error> {
+    //create destination path if not found in config
+    if !parsed_config
+        .folders
+        .contains_key(&String::from(dest_path.to_str().unwrap()))
+        && dest_path.to_str().unwrap() != ""
+    {
+        sftp_conn.create_folder(dest_path);
+    }
+
+    if check_if_file(src)? {
+        //get file checksum
+        let file_content = read_file(src)?;
+        let checksum_data = create_checksum(&file_content[..]);
+
+        //check if tpml config has file
+        match parsed_config
+            .files
+            .get(&format!("{}", src.to_str().unwrap()))
+        {
+            Some(config_checksum) => {
+                //check if found checksum equals config checksum
+                if &format!("{}", checksum_data) == config_checksum {
+                    eprintln!("no update made to file. Nothing new to update")
+                } else {
+                    compute_and_add_file(
+                        &src,
+                        &dest_path,
+                        &file_content,
+                        checksum_data,
+                        &sftp_conn,
+                        &src,
+                    )?;
+                }
+            }
+            None => {
+                compute_and_add_file(
+                    &src,
+                    &dest_path,
+                    &file_content,
+                    checksum_data,
+                    &sftp_conn,
+                    &src,
+                )?;
+            }
+        }
+    } else {
+        //folders need to be created sequentially
+        //don't run with concurrency
+        for i in upload_folder {
+            create_and_add_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
+        }
+
+        // delete marked folder
+        for i in delete_folder {
+            compute_and_remove_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
+        }
+        //delete marked files
+        for i in delete_files {
+            compute_and_remove_file(Path::new(&i), dest_path, &sftp_conn, &src)?;
+        }
+
+        //new files to upload
+        for i in upload_files.iter() {
+            let file_content = read_file(&Path::new(&i))?;
+            let checksum_data = create_checksum(&file_content[..]);
+
+            compute_and_add_file(
+                &Path::new(i),
+                &dest_path,
+                &file_content,
+                checksum_data,
+                &sftp_conn,
+                &src,
+            )?;
+        }
+        //TODO: create files concurrently on muntiple threads
+        for i in file_list {
+            let file_content = read_file(&i)?;
+            let checksum_data = create_checksum(&file_content[..]);
+            match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {
+                Some(config_checksum) => {
+                    if &format!("{}", checksum_data) != config_checksum {
+                        compute_and_add_file(
+                            &i,
+                            &dest_path,
+                            &file_content,
+                            checksum_data,
+                            &sftp_conn,
+                            &src,
+                        )?;
+                    }
+                }
+                None => {
+                    //do nothing
+                    //already taken care of by the get_item_to_upload function above
+                }
+            }
+        }
+    }
     Ok(())
 }
