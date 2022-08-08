@@ -1,5 +1,6 @@
-use std::path::Path;
-use syncer::*;
+use std::io::prelude::*;
+use std::{fs, path::Path};
+use syncer::{sftp::SftpSync, *};
 
 fn main() {
     // config::create_checksum_file(Path::new("./app")).unwrap();
@@ -19,8 +20,25 @@ fn main() {
         "127.0.0.1".to_string(),
         "22".to_string(),
     );
-    match sync(&conn, Path::new("./app"), None) {
-        Ok(_) => println!("okay"),
-        Err(e) => println!("{:?}", e),
-    }
+    let conn = conn.connect().unwrap();
+    let sftp_conn = SftpSync::new(conn).unwrap();
+    sftp_conn.download_item(Path::new("app"), Path::new("stuff")).unwrap();
+    // let link = sftp_conn.sftp.readdir(Path::new(".config")).unwrap();
+    // println!("{:?}", link);
+    // println!("{:?}", link[0].1.is_dir());
+    // fs::create_dir("app").unwrap();
+    // println!("remote file size: {}", stat.size());
+    // let mut contents = Vec::new();
+    // remote_file.read_to_end(&mut contents).unwrap();
+    // fs::write("remote", contents).unwrap();
+
+    // // Close the channel and wait for the whole content to be tranferred
+    // remote_file.send_eof().unwrap();
+    // remote_file.wait_eof().unwrap();
+    // remote_file.close().unwrap();
+    // remote_file.wait_close().unwrap();
+    // match sync(&conn, Path::new("./app"), None) {
+    //     Ok(_) => println!("okay"),
+    //     Err(e) => println!("{:?}", e),
+    // }
 }

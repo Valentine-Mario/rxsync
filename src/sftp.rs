@@ -1,12 +1,13 @@
-use ssh2::{File, Session, Sftp};
+use ssh2::{File, FileStat, Session, Sftp};
+use std::fs;
 use std::io::Error;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use std::io::prelude::*;
 
 pub struct SftpSync {
-    sftp: Sftp,
-    sess: Session,
+    pub sftp: Sftp,
+    pub sess: Session,
 }
 
 impl SftpSync {
@@ -54,6 +55,36 @@ impl SftpSync {
 
     pub fn remove_file(&self, path: &Path) -> Result<(), Error> {
         self.sftp.unlink(path)?;
+        Ok(())
+    }
+
+    pub fn download_item(&self, src: &Path, dest: &Path) -> Result<(), Error> {
+        match fs::create_dir_all(Path::new("").join(dest).join(src)){
+            Ok(_)=>{
+                let file_list= self.sftp.readdir(src)?;
+                for i in file_list{
+                    if i.1.is_dir(){
+                        self.download_item(Path::new(&i.0), dest)?
+                    }else{
+                        self.download_file(Path::new(&i.0), &Path::new("").join(dest).join(&i.0))?
+                    }
+                }
+            }
+            Err(err)=>{
+                println!("{:?}", err);
+            }
+        }
+
+        Ok(())
+    }
+
+
+    pub fn download_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
+        let (mut remote_file, stat) = self.sess.scp_recv(src)?;
+        println!("...download file of size: {}", stat.size());
+        let mut contents = Vec::new();
+        remote_file.read_to_end(&mut contents)?;
+        fs::write(dest, contents)?;
         Ok(())
     }
 }
