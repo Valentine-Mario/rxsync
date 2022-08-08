@@ -46,7 +46,7 @@ fn main() {
     //     path+=&format!("{}/", i.as_os_str().to_str().unwrap()).to_string();
     //     println!("{:?}", path)
     // }
-    match sync(&conn, Path::new("app2/"), None) {
+    match sync(&conn, Path::new("elx/"), Some(Path::new("elixir"))) {
         Ok(_) => println!("okay"),
         Err(e) => println!("{:?}", e),
     }

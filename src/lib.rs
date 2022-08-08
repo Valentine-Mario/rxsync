@@ -2,6 +2,7 @@ use crate::config::*;
 use crate::connection::*;
 use crate::file_util::*;
 use crate::sftp::*;
+use crossbeam_utils::thread;
 use std::io::Error;
 use std::path::Path;
 use std::path::PathBuf;
@@ -44,12 +45,13 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
             let mut dir = get_all_subdir(&src.to_str().unwrap())?;
 
             let mut dyn_path = String::from("");
-            let mut dyn_vec=vec![];
+            let mut dyn_vec = vec![];
 
+            //get all folder component of parent path and add them to dir list
             let path_component = src.components();
             for i in path_component {
                 dyn_path += &format!("{}/", i.as_os_str().to_str().unwrap()).to_string();
-                    dyn_vec.push(Path::new(&dyn_path).to_path_buf());
+                dyn_vec.push(Path::new(&dyn_path).to_path_buf());
             }
 
             remove_ignored_path(src, &mut dir, &ignore_files);
@@ -64,8 +66,6 @@ pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error>
             //get files to be deleted and upload
             let delete_files = get_items_to_delete(&parsed_config.files, &file_list);
             let upload_files = get_items_to_upload(&parsed_config.files, &file_list);
-
-            
 
             //check if dest path is set
             match dest {
@@ -211,8 +211,9 @@ fn upload_and_sync(
             Some(config_checksum) => {
                 //check if found checksum equals config checksum
                 if &format!("{}", checksum_data) == config_checksum {
-                    eprintln!("no update made to file. Nothing new to update")
+                    println!("no update made to file. Nothing new to update")
                 } else {
+                    println!("upting file {:?}", src);
                     compute_and_add_file(
                         &src,
                         &dest_path,
@@ -224,6 +225,7 @@ fn upload_and_sync(
                 }
             }
             None => {
+                println!("creating file {:?}", src);
                 compute_and_add_file(
                     &src,
                     &dest_path,
@@ -241,7 +243,6 @@ fn upload_and_sync(
             create_and_add_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
         }
 
-
         // delete marked folder
         // for i in delete_folder {
         //     compute_and_remove_folder(Path::new(&i), dest_path, &sftp_conn, &src)?;
@@ -256,7 +257,7 @@ fn upload_and_sync(
         for i in upload_files.iter() {
             let file_content = read_file(&Path::new(&i))?;
             let checksum_data = create_checksum(&file_content[..]);
-
+            println!("creating file {:?}", i);
             compute_and_add_file(
                 &Path::new(i),
                 &dest_path,
@@ -266,29 +267,36 @@ fn upload_and_sync(
                 &src,
             )?;
         }
-        //TODO: create files concurrently on muntiple threads
-        for i in &file_list {
-            let file_content = read_file(&i)?;
-            let checksum_data = create_checksum(&file_content[..]);
-            match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {
-                Some(config_checksum) => {
-                    if &format!("{}", checksum_data) != config_checksum {
-                        compute_and_add_file(
-                            &i,
-                            &dest_path,
-                            &file_content,
-                            checksum_data,
-                            &sftp_conn,
-                            &src,
-                        )?;
+
+        thread::scope(|s| {
+            s.spawn(|_| -> Result<(), Error> {
+                for i in &file_list {
+                    let file_content = read_file(&i)?;
+                    let checksum_data = create_checksum(&file_content[..]);
+                    match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {
+                        Some(config_checksum) => {
+                            if &format!("{}", checksum_data) != config_checksum {
+                                println!("upting file {:?}", i);
+                                compute_and_add_file(
+                                    &i,
+                                    &dest_path,
+                                    &file_content,
+                                    checksum_data,
+                                    &sftp_conn,
+                                    &src,
+                                )?;
+                            }
+                        }
+                        None => {
+                            //do nothing
+                            //already taken care of by the get_item_to_upload function above
+                        }
                     }
                 }
-                None => {
-                    //do nothing
-                    //already taken care of by the get_item_to_upload function above
-                }
-            }
-        }
+                Ok(())
+            });
+        })
+        .unwrap();
     }
     Ok(())
 }
