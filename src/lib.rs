@@ -2,7 +2,6 @@ use crate::config::*;
 use crate::connection::*;
 use crate::file_util::*;
 use crate::sftp::*;
-use crossbeam_utils::thread;
 use std::io::Error;
 use std::path::Path;
 use std::path::PathBuf;
@@ -254,6 +253,7 @@ fn upload_and_sync(
         }
 
         //new files to upload
+        //TODO: create files concurrently on muntiple threads
         for i in upload_files.iter() {
             let file_content = read_file(&Path::new(&i))?;
             let checksum_data = create_checksum(&file_content[..]);
@@ -267,36 +267,29 @@ fn upload_and_sync(
                 &src,
             )?;
         }
-
-        thread::scope(|s| {
-            s.spawn(|_| -> Result<(), Error> {
-                for i in &file_list {
-                    let file_content = read_file(&i)?;
-                    let checksum_data = create_checksum(&file_content[..]);
-                    match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {
-                        Some(config_checksum) => {
-                            if &format!("{}", checksum_data) != config_checksum {
-                                println!("upting file {:?}", i);
-                                compute_and_add_file(
-                                    &i,
-                                    &dest_path,
-                                    &file_content,
-                                    checksum_data,
-                                    &sftp_conn,
-                                    &src,
-                                )?;
-                            }
-                        }
-                        None => {
-                            //do nothing
-                            //already taken care of by the get_item_to_upload function above
-                        }
+        for i in &file_list {
+            let file_content = read_file(&i)?;
+            let checksum_data = create_checksum(&file_content[..]);
+            match parsed_config.files.get(&format!("{}", i.to_str().unwrap())) {
+                Some(config_checksum) => {
+                    if &format!("{}", checksum_data) != config_checksum {
+                        println!("updating file {:?}", i);
+                        compute_and_add_file(
+                            &i,
+                            &dest_path,
+                            &file_content,
+                            checksum_data,
+                            &sftp_conn,
+                            &src,
+                        )?;
                     }
                 }
-                Ok(())
-            });
-        })
-        .unwrap();
+                None => {
+                    //do nothing
+                    //already taken care of by the get_item_to_upload function above
+                }
+            }
+        }
     }
     Ok(())
 }
