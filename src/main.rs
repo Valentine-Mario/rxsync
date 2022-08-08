@@ -22,7 +22,7 @@ fn main() {
     );
     let conn = conn.connect().unwrap();
     let sftp_conn = SftpSync::new(conn).unwrap();
-    sftp_conn.download_item(Path::new("app"), Path::new("stuff")).unwrap();
+    sftp_conn.download_item(Path::new("app"), Path::new("hey")).unwrap();
     // let link = sftp_conn.sftp.readdir(Path::new(".config")).unwrap();
     // println!("{:?}", link);
     // println!("{:?}", link[0].1.is_dir());

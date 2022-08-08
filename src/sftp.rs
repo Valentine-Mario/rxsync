@@ -81,7 +81,7 @@ impl SftpSync {
 
     pub fn download_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
         let (mut remote_file, stat) = self.sess.scp_recv(src)?;
-        println!("...download file of size: {}", stat.size());
+        println!("...download file of size {} to path {:?}", stat.size(), dest);
         let mut contents = Vec::new();
         remote_file.read_to_end(&mut contents)?;
         fs::write(dest, contents)?;
