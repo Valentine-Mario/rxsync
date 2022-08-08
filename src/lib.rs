@@ -11,6 +11,25 @@ pub mod connection;
 pub mod file_util;
 pub mod sftp;
 
+pub fn clone_dir(ssh: &SshCred, src: &Path, dest: &Path) -> Result<(), Error> {
+    let conn = ssh.connect()?;
+    let sftp_conn = SftpSync::new(conn)?;
+    sftp_conn.download_item(src, dest)?;
+    Ok(())
+}
+
+pub fn clone_file(
+    ssh: &SshCred,
+    src: &Path,
+    dest: &Path,
+    config_dest: Option<&Path>,
+) -> Result<(), Error> {
+    let conn = ssh.connect()?;
+    let sftp_conn = SftpSync::new(conn)?;
+    sftp_conn.download_file(src, dest, config_dest)?;
+    Ok(())
+}
+
 pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error> {
     let conn = ssh.connect()?;
     let sftp_conn = SftpSync::new(conn)?;
