@@ -28,3 +28,35 @@ impl SshCred {
         Ok(sess)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::SshCred;
+    use std::env;
+
+    #[test]
+    fn create_tcp_connection() {
+        match env::var_os("NAME") {
+            Some(u) => match env::var_os("PASS") {
+                Some(p) => {
+                    let ssh = SshCred::new(
+                        u.to_str().unwrap().to_string(),
+                        p.to_str().unwrap().to_string(),
+                        "127.0.0.1".to_string(),
+                        "22".to_string(),
+                    );
+                    let session = ssh.connect();
+                    assert!(session.unwrap().authenticated())
+                }
+                None => {
+                    println!("skipping create_tcp_connection() test...")
+                }
+            },
+            None => {
+                println!("skipping create_tcp_connection() test...")
+            }
+        };
+        let result = 2 + 2;
+        assert_eq!(result, 4);
+    }
+}
