@@ -254,12 +254,12 @@ fn upload_and_sync(
 
         //new files to upload
         //TODO: create files concurrently on muntiple threads
-        for i in upload_files.iter() {
+        for i in upload_files {
             let file_content = read_file(&Path::new(&i))?;
             let checksum_data = create_checksum(&file_content[..]);
             println!("creating file {:?}", i);
             compute_and_add_file(
-                &Path::new(i),
+                &Path::new(&i),
                 &dest_path,
                 &file_content,
                 checksum_data,
