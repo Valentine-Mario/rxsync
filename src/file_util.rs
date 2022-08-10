@@ -137,5 +137,6 @@ mod tests {
         assert!(unignored_path.len() == 2);
         assert!(unignored_path.contains(&Path::new("path1").to_path_buf()));
         assert!(unignored_path.contains(&Path::new("path3").to_path_buf()));
+        std::fs::remove_file(path).unwrap();
     }
 }
