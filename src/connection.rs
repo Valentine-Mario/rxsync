@@ -35,7 +35,7 @@ mod tests {
     use std::env;
 
     #[test]
-    fn create_tcp_connection() {
+    fn test_create_tcp_connection() {
         match env::var_os("NAME") {
             Some(u) => match env::var_os("PASS") {
                 Some(p) => {
@@ -56,7 +56,5 @@ mod tests {
                 println!("skipping create_tcp_connection() test...")
             }
         };
-        let result = 2 + 2;
-        assert_eq!(result, 4);
     }
 }

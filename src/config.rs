@@ -149,3 +149,95 @@ pub fn get_items_to_upload(
     }
     return_vec
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+
+    #[test]
+    fn test_create_checksum_file() {
+        match create_checksum_file(Path::new("test_sync")) {
+            Ok(_) => {
+                let path = format!("test_sync/{}", CHECKSUM_FILE);
+                assert!(Path::new(&path).exists());
+            }
+            Err(err) => {
+                println!("error creating checksum file {:?}", err);
+                assert!(false)
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_ignore_file() {
+        let path = format!("test_sync/{}", IGNORE_FILE);
+        //create ignore file
+        let mut file = File::create(&path).expect("Error encountered while creating file!");
+        file.write_all(b"/test_dir")
+            .expect("Error while writing to file");
+        let data = get_ignore_file(Path::new("test_sync")).unwrap();
+        assert!(data.contains(&"/test_dir".to_string()));
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn test_read_checksum_file_parse_and_update_config() {
+        create_checksum_file(Path::new("test_sync")).unwrap();
+        let path = format!("test_sync/{}", CHECKSUM_FILE);
+        let data = read_checksum_file(Path::new("test_sync")).unwrap();
+        assert!(data.contains("folders"));
+        assert!(data.contains("files"));
+
+        update_folder_config(
+            "files",
+            Path::new("test_sync"),
+            &FolderConfig::Add("test".to_string(), "123".to_string()),
+        )
+        .unwrap();
+
+        let data = read_checksum_file(Path::new("test_sync")).unwrap();
+        let parsed_config = parse_checksum_config(&data).unwrap();
+
+        assert!(parsed_config.files.contains_key("test"));
+
+        update_folder_config(
+            "files",
+            Path::new("test_sync"),
+            &FolderConfig::Remove("test".to_string()),
+        )
+        .unwrap();
+
+        let data = read_checksum_file(Path::new("test_sync")).unwrap();
+        let parsed_config = parse_checksum_config(&data).unwrap();
+
+        assert!(!parsed_config.files.contains_key("test"));
+
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn test_get_items_to_delete() {
+        // create
+        let mut sample: HashMap<String, String> = HashMap::new();
+
+        // insert data
+        sample.insert("one".to_string(), "1".to_string());
+        sample.insert("two".to_string(), "2".to_string());
+        let delete_list = get_items_to_delete(&sample, &vec![Path::new("one").to_path_buf()]);
+        assert!(delete_list.contains(&"two".to_string()));
+    }
+
+    #[test]
+    fn test_get_item_to_upload() {
+        // create
+        let mut sample: HashMap<String, String> = HashMap::new();
+
+        // insert data
+        sample.insert("one".to_string(), "1".to_string());
+        sample.insert("two".to_string(), "2".to_string());
+
+        let upload_list = get_items_to_upload(&sample, &vec![Path::new("three").to_path_buf()]);
+        assert!(upload_list.contains(&"three".to_string()));
+    }
+}

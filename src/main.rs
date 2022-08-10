@@ -1,6 +1,6 @@
 use std::io::prelude::*;
 use std::{fs, path::Path};
-use syncer::{sftp::SftpSync, *};
+use xsync::{sftp::SftpSync, *};
 
 fn main() {
     // config::create_checksum_file(Path::new("./app")).unwrap();
