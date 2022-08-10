@@ -87,3 +87,55 @@ pub fn remove_ignored_path(
     src.retain(|x| x.to_str().unwrap() != "");
     src.to_vec()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::prelude::*;
+
+    #[test]
+    fn test_get_all_files_subdir() {
+        let file_list = get_all_files_subdir("test_sync").unwrap();
+        assert!(file_list.contains(&Path::new("test_sync/keep.txt").to_path_buf()));
+        assert!(file_list.contains(&Path::new("test_sync/test2/test3/test_file").to_path_buf()));
+    }
+
+    #[test]
+    fn test_get_all_subdir() {
+        let dir_list = get_all_subdir("test_sync").unwrap();
+        assert!(dir_list.contains(&Path::new("test_sync/test2").to_path_buf()));
+        assert!(dir_list.contains(&Path::new("test_sync/test2/test3").to_path_buf()));
+    }
+
+    #[test]
+    fn test_remove_ignored_path() {
+        let unignored_path = remove_ignored_path(
+            Path::new("test_sync"),
+            &mut vec![
+                Path::new("path1").to_path_buf(),
+                Path::new("path2").to_path_buf(),
+                Path::new("path3").to_path_buf(),
+            ],
+            &vec!["path2".to_string()],
+        );
+        assert!(unignored_path.len() == 3);
+
+        let path = format!("test_sync/{}", IGNORE_FILE);
+        let mut file = File::create(&path).expect("Error encountered while creating file!");
+        file.write_all(b"path2")
+            .expect("Error while writing to file");
+        let unignored_path = remove_ignored_path(
+            Path::new("test_sync"),
+            &mut vec![
+                Path::new("path1").to_path_buf(),
+                Path::new("path2").to_path_buf(),
+                Path::new("path3").to_path_buf(),
+            ],
+            &vec!["path2".to_string()],
+        );
+        assert!(unignored_path.len() == 2);
+        assert!(unignored_path.contains(&Path::new("path1").to_path_buf()));
+        assert!(unignored_path.contains(&Path::new("path3").to_path_buf()));
+    }
+}
