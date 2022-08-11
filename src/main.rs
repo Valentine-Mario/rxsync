@@ -1,5 +1,6 @@
 use std::io::prelude::*;
 use std::{fs, path::Path};
+use xsync::config::*;
 use xsync::{sftp::SftpSync, *};
 
 fn main() {
@@ -46,8 +47,13 @@ fn main() {
     //     path+=&format!("{}/", i.as_os_str().to_str().unwrap()).to_string();
     //     println!("{:?}", path)
     // }
-    match sync(&conn, Path::new("elx/"), Some(Path::new("elixir"))) {
+    match sync(&conn, Path::new("test_sync/"), Some(Path::new("elixir"))) {
         Ok(_) => println!("okay"),
         Err(e) => println!("{:?}", e),
     }
+    // sync(&conn, Path::new("test_sync/keep.txt"), None).unwrap();
+
+    // let path_component = Path::new("app");
+    // println!("{:?}", path_component.parent().unwrap());
+    // create_checksum_file(Path::new("./")).unwrap();
 }

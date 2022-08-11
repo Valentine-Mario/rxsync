@@ -119,9 +119,9 @@ impl SftpSync {
         let mut contents = Vec::new();
         remote_file.read_to_end(&mut contents)?;
         fs::write(dest, &contents)?;
-        let checksum_data = create_checksum(&contents[..]);
         match config_dest {
             Some(dest) => {
+                let checksum_data = create_checksum(&contents[..]);
                 update_folder_config(
                     "files",
                     &dest,
