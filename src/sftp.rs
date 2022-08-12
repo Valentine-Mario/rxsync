@@ -1,4 +1,4 @@
-use ssh2::{ErrorCode, File, Session, Sftp};
+use ssh2::{ErrorCode, Session, Sftp};
 use std::fs;
 use std::io::Error;
 use std::path::Path;
@@ -57,12 +57,8 @@ impl SftpSync {
         Ok(())
     }
 
-    pub fn read_file(&self, path: &Path) -> Result<File, Error> {
-        let file = self.sftp.open(path)?;
-        Ok(file)
-    }
 
-    pub fn remove_dir(&self, path: &Path) -> Result<(), Error> {
+    pub fn _remove_dir(&self, path: &Path) -> Result<(), Error> {
         self.sftp.rmdir(path)?;
 
         Ok(())

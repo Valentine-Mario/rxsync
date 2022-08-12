@@ -20,9 +20,6 @@ pub fn check_if_dir(path: &Path) -> Result<bool, Error> {
     Ok(metadata.is_dir())
 }
 
-pub fn compare_checksum(buf1: &[u8], buf2: &[u8]) -> bool {
-    adler32_slice(buf1) == adler32_slice(buf2)
-}
 
 pub fn create_checksum(buf: &[u8]) -> u32 {
     adler32_slice(buf)

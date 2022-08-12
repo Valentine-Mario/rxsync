@@ -342,7 +342,7 @@ fn _compute_and_remove_folder(
     original_src: &Path,
 ) -> Result<(), Error> {
     let absolue_path = PathBuf::new().join(dest_path).join(src);
-    sftp_conn.remove_dir(&absolue_path)?;
+    sftp_conn._remove_dir(&absolue_path)?;
     config::update_folder_config(
         "folders",
         &original_src,
