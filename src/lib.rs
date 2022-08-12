@@ -1,3 +1,48 @@
+//! A tool to help sync items in your local and remove server, pushing only modifications just like rsync
+//! 
+//! - You can ignore files and folders by creating a `.xsyncignore` file in the base directory similar way you'd write a `.gitignore` file
+//!
+//! 
+//! 
+//! - To sync a file or directory to a remote server
+//! 
+//! ```
+//! use std:: path::Path;
+//! use xsync::{connection::SshCred, sync};
+//! 
+//! let conn =SshCred::new(
+//!     "ssh_username".to_string(),
+//!     "ssh_password".to_string(),
+//!     "host".to_string(),
+//!     "port".to_string(),
+//!  );
+//! 
+//! sync(&conn, &Path::new("source_path/"), Some(Path::new("dir_path"))).unwrap()
+//! ```
+//!
+//! - This craetes a `.xsync.toml` file in the base directory which is a snapshot of the latest synced files and directories on the server
+//!   This file is how xsync can track what files or dir to update, delete or upload
+//! 
+//! - To clone a directory or file
+//! 
+//! ```
+//! use std:: path::Path;
+//! use xsync::{connection::SshCred, clone_dir, clone_file};
+//! 
+//! let conn =SshCred::new(
+//!     "ssh_username".to_string(),
+//!     "ssh_password".to_string(),
+//!     "host".to_string(),
+//!     "port".to_string(),
+//!  );
+//! 
+//! clone_dir(&conn, &Path::new("dir_to_clone"), &Path::new("write_dest")).unwrap()
+//! 
+//! //config_dest is the destination you wish to write your .xsync.toml file which is optional
+//! clone_file(&conn, &Path::new("file_to_clone"), &Path::new("write_dest"), Some(&Path::new("config_dest"))).unwrap()
+//! 
+//! ```
+//! 
 use crate::config::*;
 use crate::connection::*;
 use crate::file_util::*;
@@ -6,10 +51,11 @@ use std::io::Error;
 use std::path::Path;
 use std::path::PathBuf;
 
-pub mod config;
+mod config;
 pub mod connection;
-pub mod file_util;
-pub mod sftp;
+mod file_util;
+mod sftp;
+
 
 pub fn clone_dir(ssh: &SshCred, src: &Path, dest: &Path) -> Result<(), Error> {
     let conn = ssh.connect()?;
@@ -30,6 +76,7 @@ pub fn clone_file(
     Ok(())
 }
 
+ 
 pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error> {
     //get toml config file
     if check_if_dir(&src)? {
