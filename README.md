@@ -2,43 +2,53 @@
 
 A tool to help sync items in your local and remove server, pushing only modifications just like rsync
 
-- You can ignore files and folders by creating a `.xsyncignore` file in the base directory similar way you'd write a `.gitignore` file
+
+ - You can ignore files and folders by creating a `.xsyncignore` file in the base directory similar way you'd write a `.gitignore` file
 
 
-- To sync a file or directory to a remote server
 
-```rs
-use std:: path::Path;
-use xsync::{connection::SshCred, sync};
+ - To sync a file or directory to a remote server
 
-let conn =SshCred::new(
-    "ssh_username".to_string(),
-    "ssh_password".to_string(),
-    "host".to_string(),
-    "port".to_string(),
- );
+ ```rs
+ use std:: path::Path;
+ use xsync::{connection::SshCred, sync, connection::AuthOption};
+ 
+ //multiple auth options include
+ //Attempt basic password authentication.
+ let auth1= AuthOption::UserauthPassword("ssh_username".to_string(), "ssh_password".to_string());
+ //authenticate the current connection with the first public key found in an SSH agent
+ let auth2= AuthOption::UserauthAgent("ssh_username".to_string());
+ //Attempt public key authentication using a PEM encoded private key file stored on disk
+ let auth3= AuthOption::UserauthPubkeyFile("ssh_username".to_string(), Some(&Path::new("pub_key")), &Path::new("private_key"), Some("passphrase"));
 
-sync(&conn, &Path::new("source_path/"), Some(Path::new("dir_path"))).unwrap()
-```
-- This craetes a `.xsync.toml` file in the base directory which is a snapshot of the latest synced files and directories on the server
-  This file is how xsync can track what files or dir to update, delete or upload
+ let conn =SshCred::new(
+     auth1,
+     "host".to_string(),
+     "port".to_string(),
+  );
 
-- To clone a directory or file
+ sync(&conn, &Path::new("source_path/"), Some(Path::new("dir_path"))).unwrap();
+ ```
 
-```rs
-use std:: path::Path;
-use xsync::{connection::SshCred, clone_dir, clone_file};
+ - This creates a `.xsync.toml` file in the base directory which is a snapshot of the latest synced files and directories on the server
+   This file is how xsync can track what files or dir to update, delete or upload
 
-let conn =SshCred::new(
-    "ssh_username".to_string(),
-    "ssh_password".to_string(),
-    "host".to_string(),
-    "port".to_string(),
- );
+ - To clone a directory or file
 
-clone_dir(&conn, &Path::new("dir_to_clone"), &Path::new("write_dest")).unwrap()
+ ```rs
+ use std:: path::Path;
+ use xsync::{connection::SshCred, clone_dir, clone_file, connection::AuthOption};
 
-//config_dest is the destination you wish to write your .xsync.toml file which is optional
-clone_file(&conn, &Path::new("file_to_clone"), &Path::new("write_dest"), Some(&Path::new("config_dest"))).unwrap()
+ let auth= AuthOption::UserauthAgent("ssh_username".to_string());
+ let conn =SshCred::new(
+     auth,
+     "host".to_string(),
+     "port".to_string(),
+  );
 
-```
+ clone_dir(&conn, &Path::new("dir_to_clone"), &Path::new("write_dest")).unwrap();
+
+ //config_dest is the destination you wish to write your .xsync.toml file which is optional
+ clone_file(&conn, &Path::new("file_to_clone"), &Path::new("write_dest"), Some(&Path::new("config_dest"))).unwrap();
+
+ ``````

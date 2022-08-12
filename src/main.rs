@@ -1,10 +1,9 @@
 use std::path::Path;
-use xsync::{connection::SshCred, sync};
+use xsync::{connection::*, sync};
 
 fn main() {
     let conn = SshCred::new(
-        "root".to_string(),
-        "realboy22".to_string(),
+        AuthOption::UserauthPassword("root".to_string(), "realboy22".to_string()),
         "127.0.0.1".to_string(),
         "22".to_string(),
     );

@@ -6,43 +6,50 @@
 //!
 //! - To sync a file or directory to a remote server
 //!
-//! ```
+//! ```no_run
 //! use std:: path::Path;
-//! use xsync::{connection::SshCred, sync};
+//! use xsync::{connection::SshCred, sync, connection::AuthOption};
+//!
+//! //multiple auth options include
+//! //Attempt basic password authentication.
+//! let auth1= AuthOption::UserauthPassword("ssh_username".to_string(), "ssh_password".to_string());
+//! //authenticate the current connection with the first public key found in an SSH agent
+//! let auth2= AuthOption::UserauthAgent("ssh_username".to_string());
+//! //Attempt public key authentication using a PEM encoded private key file stored on disk
+//! let auth3= AuthOption::UserauthPubkeyFile("ssh_username".to_string(), Some(&Path::new("pub_key")), &Path::new("private_key"), Some("passphrase"));
 //!
 //! let conn =SshCred::new(
-//!     "ssh_username".to_string(),
-//!     "ssh_password".to_string(),
+//!     auth1,
 //!     "host".to_string(),
 //!     "port".to_string(),
 //!  );
 //!
-//! sync(&conn, &Path::new("source_path/"), Some(Path::new("dir_path"))).unwrap()
+//! sync(&conn, &Path::new("source_path/"), Some(Path::new("dir_path"))).unwrap();
 //! ```
 //!
-//! - This craetes a `.xsync.toml` file in the base directory which is a snapshot of the latest synced files and directories on the server
+//! - This creates a `.xsync.toml` file in the base directory which is a snapshot of the latest synced files and directories on the server
 //!   This file is how xsync can track what files or dir to update, delete or upload
 //!
 //! - To clone a directory or file
 //!
-//! ```
+//! ```no_run
 //! use std:: path::Path;
-//! use xsync::{connection::SshCred, clone_dir, clone_file};
+//! use xsync::{connection::SshCred, clone_dir, clone_file, connection::AuthOption};
 //!
+//! let auth= AuthOption::UserauthAgent("ssh_username".to_string());
 //! let conn =SshCred::new(
-//!     "ssh_username".to_string(),
-//!     "ssh_password".to_string(),
+//!     auth,
 //!     "host".to_string(),
 //!     "port".to_string(),
 //!  );
 //!
-//! clone_dir(&conn, &Path::new("dir_to_clone"), &Path::new("write_dest")).unwrap()
+//! clone_dir(&conn, &Path::new("dir_to_clone"), &Path::new("write_dest")).unwrap();
 //!
 //! //config_dest is the destination you wish to write your .xsync.toml file which is optional
-//! clone_file(&conn, &Path::new("file_to_clone"), &Path::new("write_dest"), Some(&Path::new("config_dest"))).unwrap()
+//! clone_file(&conn, &Path::new("file_to_clone"), &Path::new("write_dest"), Some(&Path::new("config_dest"))).unwrap();
 //!
 //! ```
-//!
+
 use crate::config::*;
 use crate::connection::*;
 use crate::file_util::*;
@@ -56,7 +63,7 @@ pub mod connection;
 mod file_util;
 mod sftp;
 
-pub fn clone_dir(ssh: &SshCred, src: &Path, dest: &Path) -> Result<(), Error> {
+pub fn clone_dir(ssh: &SshCred<'static>, src: &Path, dest: &Path) -> Result<(), Error> {
     let conn = ssh.connect()?;
     let sftp_conn = SftpSync::new(conn)?;
     sftp_conn.download_item(src, dest)?;
@@ -64,7 +71,7 @@ pub fn clone_dir(ssh: &SshCred, src: &Path, dest: &Path) -> Result<(), Error> {
 }
 
 pub fn clone_file(
-    ssh: &SshCred,
+    ssh: &SshCred<'static>,
     src: &Path,
     dest: &Path,
     config_dest: Option<&Path>,
@@ -75,7 +82,7 @@ pub fn clone_file(
     Ok(())
 }
 
-pub fn sync(ssh: &SshCred, src: &Path, dest: Option<&Path>) -> Result<(), Error> {
+pub fn sync(ssh: &SshCred<'static>, src: &Path, dest: Option<&Path>) -> Result<(), Error> {
     //get toml config file
     if check_if_dir(&src)? {
         create_checksum_file(src)?;
@@ -436,8 +443,10 @@ mod tests {
             Some(u) => match env::var_os("PASS") {
                 Some(p) => {
                     let ssh = SshCred::new(
-                        u.to_str().unwrap().to_string(),
-                        p.to_str().unwrap().to_string(),
+                        AuthOption::UserauthPassword(
+                            u.to_str().unwrap().to_string(),
+                            p.to_str().unwrap().to_string(),
+                        ),
                         "127.0.0.1".to_string(),
                         "22".to_string(),
                     );
