@@ -1,3 +1,44 @@
 ### Xsync
 
-A rust tool for syncing remote and local repositories.
+A tool to help sync items in your local and remove server, pushing only modifications just like rsync
+
+- You can ignore files and folders by creating a `.xsyncignore` file in the base directory similar way you'd write a `.gitignore` file
+
+
+- To sync a file or directory to a remote server
+
+```rs
+use std:: path::Path;
+use xsync::{connection::SshCred, sync};
+
+let conn =SshCred::new(
+    "ssh_username".to_string(),
+    "ssh_password".to_string(),
+    "host".to_string(),
+    "port".to_string(),
+ );
+
+sync(&conn, &Path::new("source_path/"), Some(Path::new("dir_path"))).unwrap()
+```
+- This craetes a `.xsync.toml` file in the base directory which is a snapshot of the latest synced files and directories on the server
+  This file is how xsync can track what files or dir to update, delete or upload
+
+- To clone a directory or file
+
+```rs
+use std:: path::Path;
+use xsync::{connection::SshCred, clone_dir, clone_file};
+
+let conn =SshCred::new(
+    "ssh_username".to_string(),
+    "ssh_password".to_string(),
+    "host".to_string(),
+    "port".to_string(),
+ );
+
+clone_dir(&conn, &Path::new("dir_to_clone"), &Path::new("write_dest")).unwrap()
+
+//config_dest is the destination you wish to write your .xsync.toml file which is optional
+clone_file(&conn, &Path::new("file_to_clone"), &Path::new("write_dest"), Some(&Path::new("config_dest"))).unwrap()
+
+```
