@@ -57,7 +57,6 @@ impl SftpSync {
         Ok(())
     }
 
-
     pub fn _remove_dir(&self, path: &Path) -> Result<(), Error> {
         self.sftp.rmdir(path)?;
 

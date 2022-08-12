@@ -20,7 +20,6 @@ pub fn check_if_dir(path: &Path) -> Result<bool, Error> {
     Ok(metadata.is_dir())
 }
 
-
 pub fn create_checksum(buf: &[u8]) -> u32 {
     adler32_slice(buf)
 }
