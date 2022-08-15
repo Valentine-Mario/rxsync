@@ -2,6 +2,12 @@
 
 A tool to help sync items in your local and remove server, pushing only modifications just like rsync
 
+To install, add the following to your `Cargo.toml` file
+
+```
+rxsync = "0.1.0"
+```
+
 
  - You can ignore files and folders by creating a `.xsyncignore` file in the base directory similar way you'd write a `.gitignore` file
 
