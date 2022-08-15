@@ -11,7 +11,7 @@ A tool to help sync items in your local and remove server, pushing only modifica
 
  ```rs
  use std:: path::Path;
- use xsync::{connection::SshCred, sync, connection::AuthOption};
+ use rxsync::{connection::SshCred, sync, connection::AuthOption};
  
  //multiple auth options include
  //Attempt basic password authentication.
@@ -37,7 +37,7 @@ A tool to help sync items in your local and remove server, pushing only modifica
 
  ```rs
  use std:: path::Path;
- use xsync::{connection::SshCred, clone_dir, clone_file, connection::AuthOption};
+ use rxsync::{connection::SshCred, clone_dir, clone_file, connection::AuthOption};
 
  let auth= AuthOption::UserauthAgent("ssh_username".to_string());
  let conn =SshCred::new(

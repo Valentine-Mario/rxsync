@@ -8,7 +8,7 @@
 //!
 //! ```no_run
 //! use std:: path::Path;
-//! use xsync::{connection::SshCred, sync, connection::AuthOption};
+//! use rxsync::{connection::SshCred, sync, connection::AuthOption};
 //!
 //! //multiple auth options include
 //! //Attempt basic password authentication.
@@ -28,13 +28,13 @@
 //! ```
 //!
 //! - This creates a `.xsync.toml` file in the base directory which is a snapshot of the latest synced files and directories on the server
-//!   This file is how xsync can track what files or dir to update, delete or upload
+//!   This file is how rxsync can track what files or dir to update, delete or upload
 //!
 //! - To clone a directory or file
 //!
 //! ```no_run
 //! use std:: path::Path;
-//! use xsync::{connection::SshCred, clone_dir, clone_file, connection::AuthOption};
+//! use rxsync::{connection::SshCred, clone_dir, clone_file, connection::AuthOption};
 //!
 //! let auth= AuthOption::UserauthAgent("ssh_username".to_string());
 //! let conn =SshCred::new(
