@@ -3,7 +3,7 @@ use xsync::{connection::*, sync};
 
 fn main() {
     let conn = SshCred::new(
-        AuthOption::UserauthPassword("root".to_string(), "realboy22".to_string()),
+        AuthOption::UserauthPassword("".to_string(), "".to_string()),
         "127.0.0.1".to_string(),
         "22".to_string(),
     );
