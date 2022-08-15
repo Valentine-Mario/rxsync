@@ -2,11 +2,11 @@
 name = "rxsync"
 version = "0.1.0"
 edition = "2021"
-repository = "https://github.com/Valentine-Mario/xsync"
+repository = "https://github.com/Valentine-Mario/rxsync"
 categories = ["upload-files", "development-tools", "upload-folder", "synchronization-tools"]
 description = "Sync tool for dir and files inspired by rsync"
 keywords = ["sync", "ssh", "upload"]
-homepage= "https://github.com/Valentine-Mario/xsync"
+homepage= "https://github.com/Valentine-Mario/rxsync"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
