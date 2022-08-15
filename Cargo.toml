@@ -1,5 +1,5 @@
 [package]
-name = "xsync"
+name = "rxsync"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/Valentine-Mario/xsync"

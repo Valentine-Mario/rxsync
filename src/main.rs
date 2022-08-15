@@ -1,5 +1,5 @@
 use std::path::Path;
-use xsync::{connection::*, sync};
+use rxsync::{connection::*, sync};
 
 fn main() {
     let conn = SshCred::new(
